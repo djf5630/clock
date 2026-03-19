@@ -2,180 +2,188 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>極限宇宙波動時鐘</title>
+    <title>星辰時光機 - 療癒音效版</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Noto+Sans+TC:wght@500&display=swap');
 
-        body {
-            margin: 0;
-            overflow: hidden;
-            background: radial-gradient(circle at center, #0a001a 0%, #000 100%);
-            color: #fff;
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden; background: #000; color: #fff;
             font-family: 'Orbitron', 'Noto Sans TC', sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+            cursor: pointer;
         }
 
-        /* 核心容器：波動動畫的主體 */
-        .clock-wrapper {
-            text-align: center;
-            padding: 50px 80px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(0, 255, 255, 0.2);
-            border-radius: 40px;
-            backdrop-filter: blur(15px);
-            box-shadow: 0 0 60px rgba(0, 100, 255, 0.2);
-            transition: transform 0.3s ease;
-        }
+        #star-canvas { position: absolute; top: 0; left: 0; z-index: 1; }
 
-        /* 超大波動效果動畫 */
-        @keyframes mega-wave {
-            0% { transform: scale(1) rotate(0deg); filter: blur(0) brightness(1); }
-            20% { transform: scale(1.3) rotate(3deg) skew(10deg); filter: blur(8px) brightness(2); }
-            40% { transform: scale(0.8) rotate(-3deg) skew(-10deg); filter: blur(12px) brightness(0.5); }
-            60% { transform: scale(1.1) rotate(1deg); filter: blur(4px) brightness(1.5); }
-            100% { transform: scale(1) rotate(0deg); filter: blur(0) brightness(1); }
-        }
-
-        .wave-active {
-            animation: mega-wave 0.8s cubic-bezier(0.45, 0.05, 0.55, 0.95);
+        .container {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center; z-index: 10; width: 90%;
+            pointer-events: none;
         }
 
         #time {
-            font-size: 7em;
-            color: #00f2ff;
-            text-shadow: 0 0 20px #00f2ff, 0 0 40px #7000ff;
-            margin: 0;
+            font-size: 10rem; color: #fff;
+            text-shadow: 0 0 25px rgba(255, 255, 255, 0.4), 0 0 50px rgba(100, 150, 255, 0.2);
+            margin: 0; letter-spacing: 10px;
         }
 
-        #quote-container {
-            margin-top: 30px;
-            height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+        #quote-box { margin-top: 40px; height: 120px; display: flex; align-items: center; justify-content: center; }
 
         #quote {
-            font-size: 1.8em;
-            color: #ffd700;
-            text-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
-            letter-spacing: 2px;
-            opacity: 1;
-            transition: opacity 0.4s;
+            font-size: 2.5rem; color: rgba(255, 255, 255, 0.7);
+            letter-spacing: 4px; opacity: 1;
+            transition: opacity 1.5s ease-in-out;
         }
 
-        /* 背景流星與星星 */
-        .star { position: absolute; background: white; border-radius: 50%; opacity: 0.5; }
-        .comet {
-            position: absolute;
-            width: 150px; height: 2px;
-            background: linear-gradient(90deg, rgba(255,255,255,1), transparent);
-            transform: rotate(-45deg);
-            pointer-events: none;
+        #audio-hint {
+            position: absolute; bottom: 20px; width: 100%; text-align: center;
+            font-size: 0.9rem; color: rgba(255,255,255,0.3); z-index: 20;
+            letter-spacing: 2px;
         }
     </style>
 </head>
-<body>
+<body onclick="startSpaceMusic()">
 
-    <div class="clock-wrapper" id="display">
+    <div id="audio-hint">點擊螢幕開啟宇宙音演算法</div>
+    <canvas id="star-canvas"></canvas>
+
+    <div class="container">
         <div id="time">00:00:00</div>
-        <div id="quote-container">
-            <div id="quote">進入星際時空...</div>
+        <div id="quote-box">
+            <div id="quote">正在連接星際頻譜...</div>
         </div>
     </div>
 
     <script>
-        const quotes = [
-            "星光不問趕路人，時光不負有心人。",
-            "你的征途是星辰大海，別在終點前停下。",
-            "即使身處陰溝，也要仰望星空。",
-            "勇氣是面對宇宙黑暗時，心中燃燒的恆星。",
-            "穿越黑夜的人，終將擁抱黎明的萬丈光芒。",
-            "宇宙從不隨機，你的每一分努力都有引力。",
-            "心有遠方，便能跨越任何荒蕪的星系。",
-            "向著月亮出發，即使迷失也落在星群之中。",
-            "每一次碰撞與破碎，都是生命大爆炸的前奏。",
-            "萬物皆有裂痕，那是星光照進來的地方。",
-            "即使渺小如塵埃，也要舞出屬於自己的光輝。",
-            "在寂靜的真空中進化，在孤獨的航行中爆發。",
-            "時間是唯一的度量衡，而你是命運的舵手。",
-            "意志的強大引力，足以改變人生既定的軌道。",
-            "別讓平庸熄滅了你眼中那顆閃爍的星。"
-        ];
+        const canvas = document.getElementById('star-canvas');
+        const ctx = canvas.getContext('2d');
+        const timeEl = document.getElementById('time');
+        const quoteEl = document.getElementById('quote');
 
-        let quoteIndex = 0;
-        const display = document.getElementById('display');
-        const quoteText = document.getElementById('quote');
-        const timeText = document.getElementById('time');
+        let width, height, stars = [];
+        let audioCtx;
 
-        // 更新時鐘
-        function updateClock() {
-            const now = new Date();
-            const h = String(now.getHours()).padStart(2, '0');
-            const m = String(now.getMinutes()).padStart(2, '0');
-            const s = String(now.getSeconds()).padStart(2, '0');
-            timeText.textContent = `${h}:${m}:${s}`;
+        // --- 音效功能：Web Audio 合成器 ---
+        function startSpaceMusic() {
+            if (audioCtx) return; // 防止重複啟動
+            document.getElementById('audio-hint').style.display = 'none';
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+            // 1. 建立深空底噪 (低頻暖音)
+            const masterGain = audioCtx.createGain();
+            masterGain.gain.value = 0.15;
+            masterGain.connect(audioCtx.destination);
+
+            const createDrone = (freq) => {
+                const osc = audioCtx.createOscillator();
+                const g = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.value = freq;
+                g.gain.value = 0.05;
+                osc.connect(g);
+                g.connect(masterGain);
+                osc.start();
+                
+                // 讓音量緩慢起伏，模擬呼吸感
+                setInterval(() => {
+                    const now = audioCtx.currentTime;
+                    g.gain.exponentialRampToValueAtTime(Math.random() * 0.05 + 0.02, now + 2);
+                }, 2000);
+            };
+
+            createDrone(60);  // 低音基底
+            createDrone(90);  // 和弦增益
+
+            // 2. 隨機「星光」音效 (高頻叮叮聲)
+            setInterval(() => {
+                if (Math.random() > 0.7) {
+                    const osc = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.value = 800 + Math.random() * 1200;
+                    
+                    g.gain.setValueAtTime(0, audioCtx.currentTime);
+                    g.gain.linearRampToValueAtTime(0.02, audioCtx.currentTime + 0.1);
+                    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 3);
+                    
+                    osc.connect(g);
+                    g.connect(audioCtx.destination);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 3);
+                }
+            }, 4000);
         }
 
-        // 切換金句與波動效果
-        function triggerWave() {
-            // 重新啟動動畫
-            display.classList.remove('wave-active');
-            void display.offsetWidth; // 強制瀏覽器重繪
-            display.classList.add('wave-active');
-
-            // 延遲更換文字以配合波動視覺
-            setTimeout(() => {
-                quoteText.style.opacity = 0;
-                setTimeout(() => {
-                    quoteText.textContent = quotes[quoteIndex];
-                    quoteText.style.opacity = 1;
-                    quoteIndex = (quoteIndex + 1) % quotes.length;
-                }, 200);
-            }, 100);
-        }
-
-        // 隨機星星背景
-        function createStars() {
-            for (let i = 0; i < 100; i++) {
-                const star = document.createElement('div');
-                star.className = 'star';
-                const size = Math.random() * 3 + 'px';
-                star.style.width = size;
-                star.style.height = size;
-                star.style.left = Math.random() * 100 + 'vw';
-                star.style.top = Math.random() * 100 + 'vh';
-                document.body.appendChild(star);
+        // --- 星空背景邏輯 ---
+        class Star {
+            constructor() {
+                this.reset();
+                this.x = Math.random() * width;
+            }
+            reset() {
+                this.x = width;
+                this.y = Math.random() * height;
+                this.size = Math.random() * 1.2 + 0.2;
+                this.speed = Math.random() * 0.15 + 0.05;
+                this.opacity = Math.random() * 0.5 + 0.2;
+            }
+            update() {
+                this.x -= this.speed;
+                if (this.x < 0) this.reset();
+            }
+            draw() {
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
             }
         }
 
-        // 彗星效果
-        function spawnComet() {
-            const comet = document.createElement('div');
-            comet.className = 'comet';
-            comet.style.left = Math.random() * 100 + 'vw';
-            comet.style.top = '-100px';
-            
-            const duration = 1000 + Math.random() * 2000;
-            comet.animate([
-                { transform: 'translate(0, 0) rotate(-45deg)', opacity: 1 },
-                { transform: 'translate(-1000px, 1000px) rotate(-45deg)', opacity: 0 }
-            ], { duration: duration, easing: 'linear' });
-
-            document.body.appendChild(comet);
-            setTimeout(() => comet.remove(), duration);
-            setTimeout(spawnComet, 2000 + Math.random() * 3000);
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            stars = [];
+            for (let i = 0; i < 200; i++) stars.push(new Star());
         }
 
-        // 初始化
-        createStars();
-        spawnComet();
-        setInterval(updateClock, 1000);
-        setInterval(triggerWave, 3000);
-        updateClock();
+        function animate() {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, width, height);
+            stars.forEach(s => { s.update(); s.draw(); });
+            requestAnimationFrame(animate);
+        }
+
+        // --- UI 邏輯 ---
+        const quotes = [
+            "星光不問趕路人，時光不負有心人。", "你的征途是星辰大海，無須停留。", "即使身處陰溝，也要仰望星空。",
+            "勇氣是壓力下，靈魂發出的恆星光芒。", "穿越黑夜的人，終將擁抱黎明。", "宇宙從不隨機，你的努力自帶引力。",
+            "心有遠方，便能跨越任何荒蕪。", "向著月亮出發，即使迷失也落在星群。", "每一次破碎，都是生命大爆炸的前奏。",
+            "萬物皆有裂痕，那是星光照進來的地方。", "渺小如塵埃，也要舞出震撼宇宙的光。", "在寂靜中進化，在孤獨的航行中爆發。"
+        ];
+        let quoteIndex = 0;
+
+        function updateTime() {
+            const now = new Date();
+            timeEl.textContent = now.toLocaleTimeString('zh-TW', { hour12: false });
+        }
+
+        function changeQuote() {
+            quoteEl.style.opacity = 0;
+            setTimeout(() => {
+                quoteIndex = (quoteIndex + 1) % quotes.length;
+                quoteEl.textContent = quotes[quoteIndex];
+                quoteEl.style.opacity = 1;
+            }, 1500);
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+        animate();
+        setInterval(updateTime, 1000);
+        setInterval(changeQuote, 6000);
+        updateTime();
+        changeQuote();
     </script>
 </body>
 </html>
