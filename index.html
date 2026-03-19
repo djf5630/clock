@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>極光流星之夜</title>
+    <title>極致極光星空時光機</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Noto+Sans+TC:wght@500&display=swap');
 
@@ -10,24 +10,23 @@
             margin: 0; padding: 0; width: 100%; height: 100%;
             overflow: hidden; background: #000; color: #fff;
             font-family: 'Orbitron', 'Noto Sans TC', sans-serif;
-            cursor: pointer;
         }
 
-        /* 靜態高品質背景圖層 */
-        .bg-image {
+        /* 森林星空背景：更深邃的歐洲夜晚 */
+        .bg-layer {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background-image: url('https://images.unsplash.com/photo-1531306728370-e2eba9bd7bb1?q=80&w=2000&auto=format&fit=crop');
+            background-image: url('https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?q=80&w=2013&auto=format&fit=crop');
             background-size: cover;
             background-position: center;
-            filter: brightness(0.6); /* 調暗一點，讓文字和動態特效更明顯 */
+            filter: brightness(0.4) contrast(1.2);
             z-index: 0;
         }
 
-        /* 動態 Canvas 特效層 */
-        #star-canvas {
+        /* 特效層 */
+        #canvas {
             position: absolute; top: 0; left: 0; z-index: 1;
-            mix-blend-mode: screen; /* 讓特效與背景完美融合 */
+            mix-blend-mode: screen; /* 讓光影融合更自然 */
         }
 
         .container {
@@ -38,151 +37,202 @@
         }
 
         #time {
-            font-size: 10rem; color: #fff;
-            text-shadow: 0 0 30px rgba(0, 255, 200, 0.5), 0 0 10px rgba(0, 0, 0, 0.8);
-            margin: 0; letter-spacing: 10px;
+            font-size: clamp(4rem, 12vw, 9rem);
+            color: #fff;
+            text-shadow: 0 0 20px rgba(0, 255, 150, 0.6), 0 0 40px rgba(0,0,0,0.9);
+            margin: 0; letter-spacing: 8px;
         }
-
-        #quote-box { margin-top: 40px; height: 120px; display: flex; align-items: center; justify-content: center; }
 
         #quote {
-            font-size: 2.5rem; color: #fff;
-            text-shadow: 0 0 15px rgba(0, 0, 0, 0.9);
-            letter-spacing: 4px; opacity: 1;
-            transition: opacity 1.5s ease-in-out;
+            font-size: clamp(1rem, 3vw, 2rem);
+            color: rgba(255, 255, 255, 0.85);
+            margin-top: 30px;
+            text-shadow: 0 0 10px rgba(0,0,0,1);
+            transition: opacity 1.5s;
+            font-weight: 300;
         }
 
-        #audio-hint {
-            position: absolute; bottom: 20px; width: 100%; text-align: center;
-            font-size: 0.9rem; color: rgba(255,255,255,0.5); z-index: 20;
-            letter-spacing: 2px;
+        #controls {
+            position: absolute; bottom: 40px; left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
         }
+
+        .btn {
+            padding: 12px 28px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 40px; cursor: pointer; color: #fff;
+            backdrop-filter: blur(10px);
+            font-size: 0.9rem; letter-spacing: 1px;
+            transition: 0.3s;
+        }
+        .btn:hover { background: rgba(255, 255, 255, 0.15); border-color: #00ff95; }
     </style>
 </head>
-<body onclick="startTwinkleOnly()">
+<body>
 
-    <div class="bg-image"></div>
-    <div id="audio-hint">點擊螢幕開啟隨機星光音效</div>
-    <canvas id="star-canvas"></canvas>
+    <div class="bg-layer"></div>
+    <canvas id="canvas"></canvas>
 
     <div class="container">
         <div id="time">00:00:00</div>
-        <div id="quote-box">
-            <div id="quote">正在仰望星空...</div>
-        </div>
+        <div id="quote">點擊下方開啟寂靜星空</div>
     </div>
 
+    <div id="controls">
+        <button class="btn" onclick="toggleMusic()">🎵 播放星空樂章</button>
+    </div>
+
+    <audio id="bgm" loop>
+        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" type="audio/mpeg">
+    </audio>
+
     <script>
-        const canvas = document.getElementById('star-canvas');
+        const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         const timeEl = document.getElementById('time');
         const quoteEl = document.getElementById('quote');
+        const bgm = document.getElementById('bgm');
 
-        let width, height, stars = [], shootingStars = [], audioCtx;
+        let width, height, stars = [], shootingStars = [];
+        let auroraTime = 0;
+        let isMusicPlaying = false;
 
-        // --- 音效功能 ---
-        function startTwinkleOnly() {
-            if (audioCtx) return;
-            document.getElementById('audio-hint').style.display = 'none';
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            setInterval(() => {
-                if (Math.random() > 0.6) {
-                    const osc = audioCtx.createOscillator();
-                    const g = audioCtx.createGain();
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(1500 + Math.random() * 1000, audioCtx.currentTime);
-                    g.gain.setValueAtTime(0, audioCtx.currentTime);
-                    g.gain.linearRampToValueAtTime(0.02, audioCtx.currentTime + 0.1);
-                    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 2);
-                    osc.connect(g);
-                    g.connect(audioCtx.destination);
-                    osc.start();
-                    osc.stop(audioCtx.currentTime + 2);
-                }
-            }, 3000);
-        }
-
-        // --- 星空與流星邏輯 ---
-        class Star {
-            constructor() { this.reset(); this.x = Math.random() * width; this.y = Math.random() * height; }
-            reset() {
-                this.x = Math.random() * width; this.y = Math.random() * height;
-                this.size = Math.random() * 2;
-                this.blinkSpeed = Math.random() * 0.02 + 0.005;
-                this.opacity = Math.random();
-            }
-            draw() {
-                this.opacity += this.blinkSpeed;
-                if (this.opacity > 1 || this.opacity < 0) this.blinkSpeed *= -1;
-                ctx.fillStyle = `rgba(255, 255, 255, ${Math.abs(this.opacity)})`;
-                ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill();
+        function toggleMusic() {
+            if (!isMusicPlaying) {
+                bgm.play();
+                isMusicPlaying = true;
+                startQuoteRotation();
+            } else {
+                bgm.pause();
+                isMusicPlaying = false;
             }
         }
 
-        class ShootingStar {
-            constructor() { this.active = false; }
-            spawn() {
-                this.x = Math.random() * width; this.y = Math.random() * height * 0.5;
-                this.len = Math.random() * 100 + 50;
-                this.speed = Math.random() * 10 + 5;
-                this.opacity = 1; this.active = true;
-            }
-            update() {
-                if (!this.active) { if (Math.random() > 0.99) this.spawn(); return; }
-                this.x -= this.speed; this.y += this.speed * 0.5; this.opacity -= 0.02;
-                if (this.opacity <= 0) this.active = false;
-            }
-            draw() {
-                if (!this.active) return;
-                ctx.strokeStyle = `rgba(255, 255, 255, ${this.opacity})`;
-                ctx.lineWidth = 2; ctx.beginPath();
-                ctx.moveTo(this.x, this.y);
-                ctx.lineTo(this.x + this.len, this.y - this.len * 0.5);
-                ctx.stroke();
-            }
-        }
-
-        function resize() {
+        function init() {
             width = canvas.width = window.innerWidth;
             height = canvas.height = window.innerHeight;
-            stars = Array.from({length: 100}, () => new Star());
-            shootingStars = Array.from({length: 2}, () => new ShootingStar());
+            stars = Array.from({length: 100}, () => ({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                size: Math.random() * 1.8,
+                opacity: Math.random(),
+                blink: Math.random() * 0.01 + 0.005
+            }));
         }
 
-        function animate() {
+        // 核心極光繪製邏輯
+        function drawAurora() {
+            auroraTime += 0.003;
+            const layers = [
+                { color: 'rgba(0, 255, 149, 0.15)', amp: 60, freq: 0.001, speed: 1 },
+                { color: 'rgba(138, 43, 226, 0.1)', amp: 80, freq: 0.0012, speed: 0.7 },
+                { color: 'rgba(0, 200, 255, 0.08)', amp: 40, freq: 0.0008, speed: 1.2 }
+            ];
+
+            layers.forEach((l, index) => {
+                ctx.save();
+                ctx.beginPath();
+                
+                // 創建模糊光暈感
+                ctx.shadowBlur = 40;
+                ctx.shadowColor = l.color;
+                
+                const grad = ctx.createLinearGradient(0, height * 0.1, 0, height * 0.7);
+                grad.addColorStop(0, 'transparent');
+                grad.addColorStop(0.5, l.color);
+                grad.addColorStop(1, 'transparent');
+                
+                ctx.fillStyle = grad;
+                ctx.moveTo(0, height);
+
+                for (let x = 0; x <= width; x += 10) {
+                    // 使用多重正弦波模擬自然擾動
+                    const noise = Math.sin(x * l.freq + auroraTime * l.speed + index) * l.amp;
+                    const noise2 = Math.cos(x * 0.002 - auroraTime) * 20;
+                    ctx.lineTo(x, height * 0.3 + noise + noise2);
+                }
+
+                ctx.lineTo(width, height);
+                ctx.fill();
+                ctx.restore();
+            });
+        }
+
+        function draw() {
             ctx.clearRect(0, 0, width, height);
-            stars.forEach(s => s.draw());
-            shootingStars.forEach(ss => { ss.update(); ss.draw(); });
-            requestAnimationFrame(animate);
+
+            // 1. 繪製極光 (底層)
+            drawAurora();
+
+            // 2. 繪製星星
+            stars.forEach(s => {
+                s.opacity += s.blink;
+                if (s.opacity > 1 || s.opacity < 0) s.blink *= -1;
+                ctx.fillStyle = `rgba(255, 255, 255, ${Math.abs(s.opacity)})`;
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // 3. 繪製流星 (隨機觸發)
+            if (Math.random() > 0.992) {
+                shootingStars.push({
+                    x: Math.random() * width + 200,
+                    y: Math.random() * height * 0.4,
+                    len: Math.random() * 120 + 60,
+                    speed: Math.random() * 12 + 8,
+                    opacity: 1
+                });
+            }
+            shootingStars.forEach((ss, i) => {
+                ss.x -= ss.speed;
+                ss.y += ss.speed * 0.4;
+                ss.opacity -= 0.015;
+                
+                ctx.save();
+                ctx.strokeStyle = `rgba(255, 255, 255, ${ss.opacity})`;
+                ctx.lineWidth = 3;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = "#fff";
+                ctx.lineCap = "round";
+                ctx.beginPath();
+                ctx.moveTo(ss.x, ss.y);
+                ctx.lineTo(ss.x + ss.len, ss.y - ss.len * 0.4);
+                ctx.stroke();
+                ctx.restore();
+                
+                if (ss.opacity <= 0) shootingStars.splice(i, 1);
+            });
+
+            requestAnimationFrame(draw);
         }
 
-        // --- UI 邏輯 ---
-        const quotes = [
-            "星光不問趕路人，時光不負有心人。", "你的征途是星辰大海，無須停留。",
-            "穿越黑夜的人，終將擁抱黎明。", "萬物皆有裂痕，那是星光照進來的地方。",
-            "即使身處陰溝，也要仰望星空。"
-        ];
-        let quoteIndex = 0;
+        const quotes = ["星光不問趕路人", "你的征途是星辰大海", "萬物皆有裂痕，那是光照進來的地方", "在寂靜中擁抱時光的流逝"];
+        let qIdx = 0;
 
         function updateTime() {
             const now = new Date();
             timeEl.textContent = now.toLocaleTimeString('zh-TW', { hour12: false });
         }
 
-        function changeQuote() {
-            quoteEl.style.opacity = 0;
-            setTimeout(() => {
-                quoteIndex = (quoteIndex + 1) % quotes.length;
-                quoteEl.textContent = quotes[quoteIndex];
-                quoteEl.style.opacity = 1;
-            }, 1500);
+        function startQuoteRotation() {
+            setInterval(() => {
+                quoteEl.style.opacity = 0;
+                setTimeout(() => {
+                    qIdx = (qIdx + 1) % quotes.length;
+                    quoteEl.textContent = quotes[qIdx];
+                    quoteEl.style.opacity = 1;
+                }, 1500);
+            }, 7000);
         }
 
-        window.addEventListener('resize', resize);
-        resize(); animate();
+        window.addEventListener('resize', init);
+        init();
+        draw();
         setInterval(updateTime, 1000);
-        setInterval(changeQuote, 6000);
-        updateTime(); changeQuote();
+        updateTime();
     </script>
 </body>
 </html>
